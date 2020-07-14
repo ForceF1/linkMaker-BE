@@ -1,0 +1,43 @@
+version: '3.2'
+services:
+  app:
+    image: node:10
+    restart: on-failure
+    volumes:
+      - ./:/app
+    working_dir: /app
+    user: node
+    depends_on:
+      - db
+    ports:
+      - 8080:4000
+    env_file: .env1
+    environment:
+      MYSQL_PORT: 3306
+    command: "npm run start:prod"
+  db:
+    image: mysql:5.7
+    env_file: .env1
+    ports:
+      - 33060:3306
+    expose:
+      - 3306
+    volumes:
+      - ./docker/mysql-data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin -uroot -p${MYSQL_ROOT_PASSWORD} status >/dev/null 2>/dev/null
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  pma:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: on-failure
+    ports:
+      - 3001:80
+    env_file:
+      - .env1
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
